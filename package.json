@@ -1,0 +1,22 @@
+{
+  "name": "mama-hai",
+  "version": "1.0.0",
+  "description": "MAMA HAI - Maternal Health Monitoring System (Monorepo)",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "db:setup": "cd backend && npm run db:generate && npm run db:push"
+  },
+  "keywords": [
+    "maternal-health",
+    "postpartum-hemorrhage",
+    "pwa",
+    "health-monitoring"
+  ],
+  "author": "MAMA HAI Team",
+  "license": "MIT"
+}

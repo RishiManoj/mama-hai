@@ -1,0 +1,391 @@
+// MAMA HAI Database Schema
+// This file defines the structure of all database tables
+
+// Prisma configuration
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+// User roles in the system
+enum UserRole {
+  DOCTOR      // Full access to all features
+  NURSE       // Patient monitoring and basic management
+  AMBULANCE   // Limited access for patient transport
+}
+
+// Language preferences
+enum Language {
+  ENGLISH
+  FRENCH
+}
+
+// Users table - Healthcare workers using the app
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String    // Hashed with bcrypt
+  firstName       String
+  lastName        String
+  role            UserRole
+  language        Language  @default(ENGLISH)
+  phoneNumber     String?
+  hospitalId      String?
+  hospital        Hospital? @relation(fields: [hospitalId], references: [id])
+
+  // Activity tracking
+  isActive        Boolean   @default(true)
+  lastLogin       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  patientsCreated Patient[] @relation("PatientCreator")
+
+  @@map("users")
+}
+
+// ============================================
+// PATIENT MANAGEMENT
+// ============================================
+
+// Blood type
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  UNKNOWN
+}
+
+// Patients table - Mothers being monitored
+model Patient {
+  id                String      @id @default(uuid())
+
+  // Basic information
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime
+  bloodType         BloodType   @default(UNKNOWN)
+  phoneNumber       String?
+
+  // Obstetrical formula: G-P-A-L-D
+  // G = Gravida (total pregnancies)
+  // P = Para (births after 20 weeks)
+  // A = Abortions (spontaneous or induced before 20 weeks)
+  // L = Living children
+  // D = Deliveries
+  gravida           Int         // Total number of pregnancies
+  para              Int         // Number of births after 20 weeks
+  abortions         Int         @default(0)
+  living            Int         // Number of living children
+  deliveries        Int         // Number of deliveries
+
+  // Current pregnancy info
+  gestationalAge    Int?        // Weeks
+  deliveryDate      DateTime?
+  deliveryType      String?     // Vaginal, C-Section, etc.
+
+  // Medical history
+  medicalHistory    String?     // Any relevant conditions
+  allergies         String?
+  currentMedications String?
+
+  // Location
+  hospitalId        String
+  hospital          Hospital    @relation(fields: [hospitalId], references: [id])
+  wardNumber        String?     // Room/Ward number
+  bedNumber         String?
+
+  // Status
+  isActive          Boolean     @default(true)
+
+  // Tracking
+  createdBy         String
+  creator           User        @relation("PatientCreator", fields: [createdBy], references: [id])
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  monitoringSessions MonitoringSession[]
+  alerts            Alert[]
+  referralsFrom     Referral[]  @relation("ReferralPatient")
+
+  @@map("patients")
+}
+
+// ============================================
+// MONITORING SYSTEM
+// ============================================
+
+// Monitoring session status
+enum SessionStatus {
+  ACTIVE      // Currently monitoring
+  PAUSED      // Temporarily paused
+  COMPLETED   // Monitoring finished normally
+  EMERGENCY   // Emergency referral in progress
+}
+
+// Device types
+enum DeviceType {
+  SMART_MAT    // Blood loss monitoring mat
+  LIFE_SIGNS   // Vital signs monitor
+}
+
+// Monitoring sessions - Each time a patient is actively monitored
+model MonitoringSession {
+  id              String        @id @default(uuid())
+
+  // Patient info
+  patientId       String
+  patient         Patient       @relation(fields: [patientId], references: [id])
+
+  // Session info
+  status          SessionStatus @default(ACTIVE)
+  startTime       DateTime      @default(now())
+  endTime         DateTime?
+
+  // Device connections
+  smartMatId      String?       // Smart Mat device ID
+  lifeSignsId     String?       // Life Signs device ID
+
+  // Cumulative measurements
+  totalBloodLoss  Float         @default(0) // in ml
+  peakHeartRate   Int?
+  lowestBP        String?       // Format: "120/80"
+
+  // Alert tracking
+  currentAlertZone String       @default("GREEN") // GREEN, YELLOW, ORANGE, RED
+  alertCount      Int           @default(0)
+
+  // Notes
+  notes           String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  vitalSigns      VitalSign[]
+  alerts          Alert[]
+
+  @@map("monitoring_sessions")
+}
+
+// Vital signs - Time-series data from devices
+model VitalSign {
+  id                String            @id @default(uuid())
+
+  // Session reference
+  sessionId         String
+  session           MonitoringSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Device info
+  deviceType        DeviceType
+  deviceId          String
+
+  // Blood loss measurements (from Smart Mat)
+  bloodLossVolume   Float?            // Incremental blood loss in ml
+  cumulativeBloodLoss Float?          // Total blood loss so far
+
+  // Vital signs (from Life Signs monitor)
+  heartRate         Int?              // bpm
+  systolicBP        Int?              // mmHg
+  diastolicBP       Int?              // mmHg
+  oxygenSaturation  Float?            // SpO2 percentage
+  temperature       Float?            // Celsius
+
+  // Calculated metrics
+  shockIndex        Float?            // HR / Systolic BP
+  deltaShockIndex   Float?            // Change from baseline
+
+  // Timing
+  timestamp         DateTime          @default(now())
+
+  @@map("vital_signs")
+  @@index([sessionId, timestamp])
+}
+
+// ============================================
+// ALERT SYSTEM
+// ============================================
+
+// Alert severity levels (based on MAMA HAI zones)
+enum AlertZone {
+  GREEN   // Normal surveillance
+  YELLOW  // Early warning (300-500ml)
+  ORANGE  // PPH detected (500-800ml)
+  RED     // Critical emergency (≥1000ml)
+}
+
+// Alert status
+enum AlertStatus {
+  ACTIVE      // Currently active
+  ACKNOWLEDGED // Seen by staff
+  RESOLVED    // Issue resolved
+}
+
+// Alerts table
+model Alert {
+  id                String      @id @default(uuid())
+
+  // Patient and session
+  patientId         String
+  patient           Patient     @relation(fields: [patientId], references: [id])
+  sessionId         String
+  session           MonitoringSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Alert details
+  zone              AlertZone
+  status            AlertStatus @default(ACTIVE)
+
+  // Trigger information
+  triggerType       String      // "BLOOD_LOSS", "SHOCK_INDEX", "VITAL_SIGNS"
+  triggerValue      String      // The value that triggered the alert
+  message           String      // Human-readable alert message
+
+  // Recommended actions (based on zone)
+  recommendedActions String[]   // Array of action strings
+
+  // Response tracking
+  acknowledgedAt    DateTime?
+  acknowledgedBy    String?     // User ID who acknowledged
+  resolvedAt        DateTime?
+  resolvedBy        String?     // User ID who resolved
+  resolutionNotes   String?
+
+  createdAt         DateTime    @default(now())
+
+  @@map("alerts")
+  @@index([patientId, status])
+  @@index([sessionId, createdAt])
+}
+
+// ============================================
+// REFERRAL SYSTEM
+// ============================================
+
+// Hospital SONU levels (Soins Obstétricaux et Néonatals d'Urgence)
+enum SonuLevel {
+  BASIC       // Basic emergency obstetric care
+  COMPREHENSIVE // Comprehensive emergency obstetric care with surgery
+}
+
+// Referral status
+enum ReferralStatus {
+  PENDING     // Referral created, not yet in transit
+  IN_TRANSIT  // Patient being transported
+  ARRIVED     // Patient arrived at destination
+  COMPLETED   // Handover completed
+  CANCELLED   // Referral cancelled
+}
+
+// Patient outcome after referral
+enum PatientOutcome {
+  STABILIZED      // Condition stabilized
+  SURGERY_DONE    // Surgery performed
+  INTENSIVE_CARE  // Transferred to ICU
+  RECOVERED       // Recovered and discharged
+  DECEASED        // Patient deceased
+  UNKNOWN         // Outcome not yet known
+}
+
+// Hospitals in the network
+model Hospital {
+  id              String      @id @default(uuid())
+  name            String
+  code            String      @unique    // Short code (e.g., "CSB-001")
+  sonuLevel       SonuLevel
+
+  // Location
+  region          String
+  district        String
+  address         String
+  latitude        Float?
+  longitude       Float?
+
+  // Contact
+  phoneNumber     String
+  emergencyPhone  String?
+  email           String?
+
+  // Capacity
+  hasSurgery      Boolean     @default(false)
+  hasBloodBank    Boolean     @default(false)
+  hasICU          Boolean     @default(false)
+  bedCapacity     Int?
+
+  // Status
+  isActive        Boolean     @default(true)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  users           User[]
+  patients        Patient[]
+  referralsFrom   Referral[]  @relation("FromHospital")
+  referralsTo     Referral[]  @relation("ToHospital")
+
+  @@map("hospitals")
+}
+
+// Referrals between hospitals
+model Referral {
+  id                String          @id @default(uuid())
+
+  // Patient
+  patientId         String
+  patient           Patient         @relation("ReferralPatient", fields: [patientId], references: [id])
+
+  // Hospitals
+  fromHospitalId    String
+  fromHospital      Hospital        @relation("FromHospital", fields: [fromHospitalId], references: [id])
+  toHospitalId      String
+  toHospital        Hospital        @relation("ToHospital", fields: [toHospitalId], references: [id])
+
+  // Referral details
+  status            ReferralStatus  @default(PENDING)
+  reason            String          // Why patient is being referred
+  urgencyLevel      AlertZone       // Same zones as alerts
+
+  // Clinical summary at time of referral
+  bloodLossAtReferral Float         // ml
+  vitalSigns        String          // JSON string of latest vitals
+  treatmentProvided String          // What has been done so far
+
+  // Transport
+  ambulanceId       String?         // If ambulance assigned
+  estimatedArrival  DateTime?
+  departureTime     DateTime?
+  arrivalTime       DateTime?
+
+  // Outcome tracking
+  outcome           PatientOutcome? @default(UNKNOWN)
+  outcomeNotes      String?
+  completedAt       DateTime?
+
+  // Communication
+  contactPerson     String          // Name at receiving hospital
+  contactPhone      String          // Phone number to call
+  notes             String?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("referrals")
+  @@index([patientId, status])
+  @@index([fromHospitalId, createdAt])
+  @@index([toHospitalId, status])
+}
