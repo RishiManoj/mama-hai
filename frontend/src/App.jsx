@@ -5,10 +5,11 @@
  * It contains routing, authentication logic, and global state management.
  */
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import MobileNav from './components/MobileNav';
 
 // Pages
 import Home from './pages/Home';
@@ -19,39 +20,19 @@ import PatientList from './pages/PatientList';
 import PatientRegister from './pages/PatientRegister';
 import PatientDetails from './pages/PatientDetails';
 
-function App() {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        {/* Toast Notifications */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#fff',
-              color: '#333',
-              padding: '16px',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
-              },
-            },
-          }}
-        />
+// Component to conditionally show mobile nav
+function AppContent() {
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
-        {/* Routes */}
-        <Routes>
+  // Show mobile nav only on authenticated pages (not login/register/home)
+  const showMobileNav = isAuthenticated &&
+    !['/login', '/register', '/'].includes(location.pathname);
+
+  return (
+    <>
+      {showMobileNav && <MobileNav />}
+      <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -93,7 +74,43 @@ function App() {
 
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+      </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        {/* Toast Notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#fff',
+              color: '#333',
+              padding: '16px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
+
+        <AppContent />
       </AuthProvider>
     </BrowserRouter>
   );

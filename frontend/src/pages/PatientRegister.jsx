@@ -98,9 +98,9 @@ export default function PatientRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pb-20 md:pb-0">
+      {/* Desktop Navigation */}
+      <nav className="bg-white shadow-sm hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -115,6 +115,23 @@ export default function PatientRegister() {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white shadow-sm sticky top-0 z-40">
+        <div className="px-4 py-3">
+          <div className="flex items-center space-x-3">
+            <Link to="/patients" className="text-neutral-600 active:text-primary-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <div className="flex items-center space-x-2">
+              <img src="/logo.png" alt="MAMA HAI" className="h-8 w-auto" />
+              <h1 className="text-lg font-bold text-primary-600">Register Patient</h1>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

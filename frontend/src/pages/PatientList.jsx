@@ -107,9 +107,9 @@ export default function PatientList() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pb-20 md:pb-0">
+      {/* Desktop Navigation */}
+      <nav className="bg-white shadow-sm hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -128,10 +128,27 @@ export default function PatientList() {
         </div>
       </nav>
 
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white shadow-sm sticky top-0 z-40">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <img src="/logo.png" alt="MAMA HAI" className="h-8 w-auto" />
+              <div>
+                <h1 className="text-lg font-bold text-primary-600">Patients</h1>
+              </div>
+            </div>
+            <Link to="/patients/register" className="bg-primary-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium active:bg-primary-700">
+              + Add
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        {/* Header - Desktop only */}
+        <div className="hidden md:flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-primary-600">Patients</h1>
             <p className="text-neutral-600 mt-1">
@@ -218,41 +235,37 @@ export default function PatientList() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3 md:gap-4">
             {filteredPatients.map((patient) => (
               <div
                 key={patient.id}
-                className="card hover:shadow-lg transition-shadow cursor-pointer"
+                className="card hover:shadow-lg transition-shadow cursor-pointer active:scale-98"
                 onClick={() => navigate(`/patients/${patient.id}`)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-neutral-800">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
+                      <h3 className="text-base md:text-lg font-semibold text-neutral-800">
                         {patient.firstName} {patient.lastName}
                       </h3>
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getRiskBadgeColor(
+                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getRiskBadgeColor(
                           patient.riskLevel
                         )}`}
                       >
-                        {patient.riskLevel} Risk
+                        {patient.riskLevel}
                       </span>
                       {patient.isPregnant && (
-                        <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
                           Pregnant
                         </span>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs md:text-sm">
                       <div>
-                        <p className="text-neutral-500">Age</p>
-                        <p className="font-medium">{patient.age} years</p>
-                      </div>
-                      <div>
-                        <p className="text-neutral-500">Blood Type</p>
-                        <p className="font-medium">{patient.bloodType}</p>
+                        <p className="text-neutral-500">Age / Blood</p>
+                        <p className="font-medium">{patient.age}y • {patient.bloodType}</p>
                       </div>
                       <div>
                         <p className="text-neutral-500">G-P-A-L-D</p>
@@ -261,15 +274,15 @@ export default function PatientList() {
                           {patient.living}-{patient.deaths}
                         </p>
                       </div>
-                      <div>
+                      <div className="col-span-2">
                         <p className="text-neutral-500">Status</p>
                         <p className="font-medium">{getPregnancyStatus(patient)}</p>
                       </div>
                     </div>
 
                     {patient.nextAppointment && (
-                      <div className="mt-3 text-sm">
-                        <span className="text-neutral-500">Next Appointment: </span>
+                      <div className="mt-2 pt-2 border-t border-neutral-100 text-xs md:text-sm">
+                        <span className="text-neutral-500">Next: </span>
                         <span className="font-medium text-primary-600">
                           {new Date(patient.nextAppointment).toLocaleDateString()}
                         </span>
@@ -277,9 +290,9 @@ export default function PatientList() {
                     )}
                   </div>
 
-                  <div className="ml-4">
+                  <div className="ml-3 flex-shrink-0">
                     <svg
-                      className="w-6 h-6 text-neutral-400"
+                      className="w-5 h-5 md:w-6 md:h-6 text-neutral-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
