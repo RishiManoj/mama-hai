@@ -15,6 +15,9 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import PatientList from './pages/PatientList';
+import PatientRegister from './pages/PatientRegister';
+import PatientDetails from './pages/PatientDetails';
 
 function App() {
   return (
@@ -60,6 +63,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patients"
+            element={
+              <ProtectedRoute>
+                <PatientList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patients/register"
+            element={
+              <ProtectedRoute>
+                <PatientRegister />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patients/:id"
+            element={
+              <ProtectedRoute>
+                <PatientDetails />
               </ProtectedRoute>
             }
           />

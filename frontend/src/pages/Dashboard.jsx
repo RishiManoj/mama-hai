@@ -1,15 +1,36 @@
 /**
  * Dashboard Page
  *
- * Main page after login - shows user info and navigation
+ * Main page after login - shows user info, patient statistics, and navigation
  */
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { getPatientStats } from '../services/patientService';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const data = await getPatientStats();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -102,20 +123,116 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Next Phase Info */}
+        {/* Patient Statistics */}
+        <div className="card mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-neutral-800">
+              Patient Statistics
+            </h2>
+            <Link to="/patients" className="btn btn-primary">
+              View All Patients
+            </Link>
+          </div>
+
+          {loadingStats ? (
+            <div className="text-center py-8">
+              <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent"></div>
+              <p className="mt-2 text-sm text-neutral-600">Loading statistics...</p>
+            </div>
+          ) : stats ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="bg-primary-50 rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-primary-600">{stats.total}</p>
+                <p className="text-sm text-neutral-600 mt-1">Total Patients</p>
+              </div>
+              <div className="bg-secondary-50 rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-secondary-600">{stats.pregnant}</p>
+                <p className="text-sm text-neutral-600 mt-1">Pregnant</p>
+              </div>
+              <div className="bg-alert-red-light rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-alert-red-dark">{stats.highRisk}</p>
+                <p className="text-sm text-neutral-600 mt-1">High Risk</p>
+              </div>
+              <div className="bg-alert-yellow-light rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-alert-yellow-dark">{stats.moderateRisk}</p>
+                <p className="text-sm text-neutral-600 mt-1">Moderate Risk</p>
+              </div>
+              <div className="bg-alert-green-light rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-alert-green-dark">{stats.lowRisk}</p>
+                <p className="text-sm text-neutral-600 mt-1">Low Risk</p>
+              </div>
+              <div className="bg-neutral-100 rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-neutral-700">{stats.postpartum}</p>
+                <p className="text-sm text-neutral-600 mt-1">Postpartum</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-neutral-600 py-8">
+              No statistics available
+            </p>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Link to="/patients" className="card hover:shadow-lg transition-shadow">
+            <div className="flex items-center space-x-4">
+              <div className="bg-primary-100 rounded-full p-3">
+                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-neutral-800">Manage Patients</h3>
+                <p className="text-sm text-neutral-600">View and manage patient records</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link to="/patients/register" className="card hover:shadow-lg transition-shadow">
+            <div className="flex items-center space-x-4">
+              <div className="bg-secondary-100 rounded-full p-3">
+                <svg className="w-8 h-8 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-neutral-800">Register Patient</h3>
+                <p className="text-sm text-neutral-600">Add new patient to system</p>
+              </div>
+            </div>
+          </Link>
+
+          <div className="card bg-neutral-50 opacity-60">
+            <div className="flex items-center space-x-4">
+              <div className="bg-neutral-200 rounded-full p-3">
+                <svg className="w-8 h-8 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-neutral-600">Monitoring</h3>
+                <p className="text-sm text-neutral-500">Coming in Phase 4</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Phase Progress */}
         <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-primary-800 mb-3">
-            🎉 Authentication Complete!
+            🎉 Phase 3 Complete!
           </h3>
           <p className="text-neutral-700 mb-4">
-            Phase 2 is working! You're now logged in with a demo account.
+            Patient management system is now active. You can register patients, view patient lists, and track obstetrical data.
           </p>
           <div className="bg-white rounded-lg p-4">
-            <p className="font-semibold text-sm mb-2">Coming in Phase 3:</p>
+            <p className="font-semibold text-sm mb-2">Coming in Phase 4:</p>
             <ul className="space-y-1 text-sm text-neutral-600">
-              <li>• Patient registration and management</li>
-              <li>• Obstetrical data tracking (G-P-A-L-D)</li>
-              <li>• Patient list and details views</li>
+              <li>• Real-time patient monitoring</li>
+              <li>• Vital signs tracking (BP, HR, SpO2, Temp)</li>
+              <li>• Shock Index calculations</li>
+              <li>• Monitoring history and trends</li>
             </ul>
           </div>
         </div>

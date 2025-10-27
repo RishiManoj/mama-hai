@@ -109,8 +109,8 @@ app.get('/health', (req, res) => {
 
 // Import routes
 import authRoutes from './routes/auth.routes.js';
+import patientRoutes from './routes/patient.routes.js';
 // Other routes will be added in later phases:
-// import patientRoutes from './routes/patient.routes.js';
 // import monitoringRoutes from './routes/monitoring.routes.js';
 // import alertRoutes from './routes/alert.routes.js';
 // import referralRoutes from './routes/referral.routes.js';
@@ -121,7 +121,7 @@ app.use('/api/auth/register', authLimiter);
 
 // Mount API routes
 app.use('/api/auth', authRoutes);
-// app.use('/api/patients', patientRoutes);
+app.use('/api/patients', patientRoutes);
 // app.use('/api/monitoring', monitoringRoutes);
 // app.use('/api/alerts', alertRoutes);
 // app.use('/api/referrals', referralRoutes);
