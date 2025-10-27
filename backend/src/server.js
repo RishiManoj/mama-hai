@@ -107,23 +107,20 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes will be added here
-// Example: app.use('/api/auth', authRoutes);
-// Example: app.use('/api/patients', patientRoutes);
-
-// Import routes (these will be created in later phases)
-// import authRoutes from './routes/auth.routes.js';
+// Import routes
+import authRoutes from './routes/auth.routes.js';
+// Other routes will be added in later phases:
 // import patientRoutes from './routes/patient.routes.js';
 // import monitoringRoutes from './routes/monitoring.routes.js';
 // import alertRoutes from './routes/alert.routes.js';
 // import referralRoutes from './routes/referral.routes.js';
 
 // Apply auth limiter to login/register routes
-// app.use('/api/auth/login', authLimiter);
-// app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Mount API routes
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 // app.use('/api/patients', patientRoutes);
 // app.use('/api/monitoring', monitoringRoutes);
 // app.use('/api/alerts', alertRoutes);
